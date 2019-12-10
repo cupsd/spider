@@ -22,10 +22,6 @@ import (
 	"github.com/gocolly/colly"
 )
 
-/*
-<a style="color: #ff0000;" href="magnet:?xt=urn:btih:0cde8074b8bd3f8ad101ffdb6921c5daebe337fc&amp;dn=Abominable.2019.1080p.BluRay.x264.DTS-HD.MA.7.1-FGT&amp;tr=http%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&amp;tr=udp%3A%2F%2F9.rarbg.me%3A2780&amp;tr=udp%3A%2F%2F9.rarbg.to%3A2710">Abominable.2019.1080p.BluRay.x264.DTS-HD.MA.7.1-FGT</a>
-*/
-
 type Movie struct {
 	Title       string
 	Url         string
@@ -149,6 +145,7 @@ func determineEncoding(r io.Reader) encoding.Encoding {
 	return e
 }
 
+// 获取所有的下载链接
 func getDownloadAdds(url string) (matchs [][]string, err error) {
 	var data []byte
 	re := regexp.MustCompile(downloadRe)
