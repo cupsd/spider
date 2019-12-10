@@ -1,21 +1,40 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"path"
+	"regexp"
 	"strconv"
+
+	"golang.org/x/net/html/charset"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
 
 	"github.com/gocolly/colly/queue"
 
 	"github.com/gocolly/colly"
 )
 
-// TODO: 获取电影下载链接
+/*
+<a style="color: #ff0000;" href="magnet:?xt=urn:btih:0cde8074b8bd3f8ad101ffdb6921c5daebe337fc&amp;dn=Abominable.2019.1080p.BluRay.x264.DTS-HD.MA.7.1-FGT&amp;tr=http%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&amp;tr=udp%3A%2F%2F9.rarbg.me%3A2780&amp;tr=udp%3A%2F%2F9.rarbg.to%3A2710">Abominable.2019.1080p.BluRay.x264.DTS-HD.MA.7.1-FGT</a>
+*/
+
 type Movie struct {
-	Title string
-	Url   string
+	Title       string
+	Url         string
+	DownloadAdd []string
 }
+
+const (
+	downloadRe = `<a style="color: #ff0000;" href="(.+)?">.*?</a>`
+)
 
 func main() {
 
@@ -29,14 +48,30 @@ func main() {
 		log.Fatal(err)
 	}
 
-	c.OnHTML("div.article h2", func(e *colly.HTMLElement) {
-		// 获取电影链接
-		e.ForEach("a", func(_ int, el *colly.HTMLElement) {
-			movies = append(movies, &Movie{
-				Url:   el.Attr("href"),
-				Title: e.Text,
-			})
-		})
+	c.OnHTML("div.article h2 a", func(e *colly.HTMLElement) {
+		movie := &Movie{}
+		movie.Title = e.Text
+		url := e.Attr("href")
+		movie.Url = url
+
+		subMatch, err := getDownloadAdds(url)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// 正则匹配失败，没有下载链接
+		if subMatch == nil {
+			movie.DownloadAdd = append(movie.DownloadAdd, "没有下载链接或链接已过期")
+			return
+		}
+
+		// 将多个链接加入到切片中
+		for _, match := range subMatch {
+			movie.DownloadAdd = append(movie.DownloadAdd, match[1])
+		}
+
+		movies = append(movies, movie)
 	})
 
 	// 将url加入到队列中
@@ -50,8 +85,14 @@ func main() {
 
 	q.Run(c)
 
-	for _, movie := range movies {
-		fmt.Printf("%#v\n", movie)
+	data, err := json.Marshal(movies)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile("1.txt", data, 0644)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -68,6 +109,58 @@ func getPageCount() (count int, err error) {
 	})
 
 	c.Visit("http://gaoqing.la/1080p")
+
+	return
+}
+
+// 获取页面
+func getPage(url string) (data []byte, err error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		err = errors.New("return code is not 200")
+		return
+	}
+
+	e := determineEncoding(resp.Body)
+
+	Reader := transform.NewReader(resp.Body, e.NewDecoder())
+
+	data, err = ioutil.ReadAll(Reader)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// 自动决定使用哪种编码格式
+func determineEncoding(r io.Reader) encoding.Encoding {
+
+	bytes, err := bufio.NewReader(r).Peek(1024)
+	if err != nil {
+		log.Fatal(err)
+	}
+	e, _, _ := charset.DetermineEncoding(bytes, "")
+
+	return e
+}
+
+func getDownloadAdds(url string) (matchs [][]string, err error) {
+	var data []byte
+	re := regexp.MustCompile(downloadRe)
+	data, err = getPage(url)
+	if err != nil {
+		return
+	}
+
+	matchs = re.FindAllStringSubmatch(string(data), -1)
+	if matchs == nil {
+		return
+	}
 
 	return
 }
