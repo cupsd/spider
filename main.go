@@ -28,6 +28,7 @@ type Movie struct {
 	DownloadAdd []string
 }
 
+// 下载链接匹配正则
 const (
 	downloadRe = `<a style="color: #ff0000;" href="(.+)?">.*?</a>`
 )
