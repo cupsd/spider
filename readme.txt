@@ -1,1 +1,1 @@
-study go spider 
+ to study go spider 
