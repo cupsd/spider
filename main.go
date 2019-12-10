@@ -75,7 +75,7 @@ func main() {
 	for i := 1; i <= pageCount; i++ {
 		if i == 1 {
 			q.AddURL("http://gaoqing.la/1080p")
-			return
+			continue
 		}
 
 		q.AddURL(fmt.Sprintf("http://gaoqing.la/1080p/page/%d", i))
