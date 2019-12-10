@@ -4,3 +4,4 @@
  master add test 
  add dev test
  merge test
+fix bug
