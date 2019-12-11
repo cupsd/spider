@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="TerminalProjectOptionsProvider">
+    <envs>
+      <env key="http_proxy" value="http://127.0.0.1:1080" />
+      <env key="https_proxy" value="http://127.0.0.1:1080" />
+    </envs>
+  </component>
+</project>
