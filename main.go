@@ -120,7 +120,7 @@ func getPage(url string) (data []byte, err error) {
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = errors.New("return code is not 200"):
+		err = errors.New("return code is not 200")
 		return
 	}
 
