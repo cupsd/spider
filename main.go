@@ -88,7 +88,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile("1.txt", data, 0644)
+	err = ioutil.WriteFile("movie.txt", data, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
